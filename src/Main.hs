@@ -1,5 +1,7 @@
 module Main where
 
+-- want this to be general so that we can have many different tests
+
 import Data.Function
 import Data.List
 import Data.Maybe
