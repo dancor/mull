@@ -60,3 +60,28 @@ intvl playing = (,) "intvl" . (,) "identify ascending intervals" $ let
     playP playing . line $ map (\ x -> note x qn na) m
   ans [n1, n2] = show $ Pitch.toInt n2 - Pitch.toInt n1
   in ask gen disp ans
+
+geet :: (RandomGen g) => ([Char], ([Char], g -> IO ()))
+geet = (,) "geet" . (,) "guitar frets -> note names" $ let
+  strs = map myPitch [(2, E), (2, A), (3, D), (3, G), (3, B), (4, E)]
+  showPitch (o, n) = show n ++ show (o + 3)
+
+  gen g = let
+    g1:g2:_ = gens g
+    in (choice g1 strs, fst $ randomR (1, 11) g2)
+  disp (s, f) = putStrLn $ showPitch s ++ " + " ++ show f
+  ans (s, f) = showPitch . Pitch.fromInt $ Pitch.toInt s + f
+  in ask gen disp ans
+
+geetR :: (RandomGen g) => ([Char], ([Char], g -> IO ()))
+geetR = (,) "geetR" . (,) "note names -> guitar frets" $ let
+  strs = map myPitch [(2, E), (2, A), (3, D), (3, G), (3, B), (4, E)]
+  showPitch (o, n) = show n ++ show (o + 3)
+
+  gen g = let
+    g1:g2:_ = gens g
+    in (choice g1 strs, fst $ randomR (1, 11) g2)
+  disp (s, f) = putStrLn $ 
+    showPitch s ++ "'s " ++ showPitch (Pitch.fromInt (Pitch.toInt s + f))
+  ans (s, f) = show f
+  in ask gen disp ans

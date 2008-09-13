@@ -32,7 +32,12 @@ main = do
   args <- getArgs
   playing <- newEmptyMVar
   let
-    subjects = [mul, intvl playing]
+    subjects = [
+      geet, 
+      geetR, 
+      intvl playing, 
+      mul
+      ]
     usage = "usage: mull [options] <subjects>"
     subjMsg = unlines $
       "subjects are:":map (\ (s, (d, _)) -> s ++ "\t" ++ d) subjects
