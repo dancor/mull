@@ -14,6 +14,7 @@ import HSH
 import System.Random
 
 -- haskore has its 0 octave at C3 (low C) for some reason
+myPitch :: (Num t) => (t, t1) -> (t, t1)
 myPitch (o, n) = (o - 3, n)
 
 rndUntil :: (RandomGen g) => (a -> Bool) -> (g -> a) -> g -> a
@@ -22,6 +23,7 @@ rndUntil t f g = let
   y = f g1
   in if t y then y else rndUntil t f g2
 
+playQ :: MidiMusic.T -> IO ()
 playQ m = do
   let
     fileName = "test.mid"

@@ -7,6 +7,7 @@ import System.Console.Readline
 -- generic asker where there is a unique answer.
 -- questions are not re-asked on incorrect answers.
 -- question re-asked on blank answer.  (useful for multimedia)
+ask :: (Show a1) => (t -> a1) -> (a1 -> IO a) -> (a1 -> [Char]) -> t -> IO ()
 ask gen dispM ans g = let
   inst = gen g
   a = ans inst
