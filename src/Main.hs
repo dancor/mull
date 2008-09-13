@@ -9,31 +9,19 @@ import System.Console.Readline
 import System.Environment
 import System.Random
 
-shuffle :: StdGen -> [a] -> [a]
+shuffle :: (RandomGen g) => g -> [b] -> [b]
 shuffle rnd l = map snd (sortBy (compare `on` fst) (zip rndInts l))
   where
     rndInts :: [Int]
     rndInts = randoms rnd
 
-choice :: StdGen -> [a] -> a 
+choice :: (RandomGen g) => g -> [a] -> a
 choice rnd l = head (shuffle rnd l)
 
-readMb :: Read a => String -> Maybe a
+readMb :: (Read a) => String -> Maybe a
 readMb s = fmap fst . listToMaybe $ reads s
 
-intMull :: Int -> Int -> Int
-intMull = (*)
-
-killBksps :: [Char] -> [Char]
-killBksps "" = ""
-killBksps (_:'\b':rest) = killBksps rest
-killBksps ('\b':rest) = killBksps rest
-killBksps (c:rest) = c:killBksps rest
-
---mull = simple (*) (\ l r -> show l ++ " * " ++ show r)
-
---simple :: (a -> b -> c) -> (a -> b -> String) -> StdGen -> IO ()
-mull :: (System.Random.RandomGen g) => g -> IO ()
+mull :: (RandomGen g) => g -> IO ()
 mull g = do
   let
     n1:n2:_ = randomRs (11, 99 :: Int) g
@@ -47,11 +35,8 @@ mull g = do
     Nothing -> failz
     Just ansGiven -> if ansGiven == ans then putStrLn "" else failz
 
-ask :: [StdGen -> t t1] -> StdGen -> t t1
-ask fs g = do
-  let 
-    (g1, g2) = split g
-  (choice g1 fs) g2 
+ask :: (RandomGen a) => [a -> b] -> a -> b
+ask fs g = let (g1, g2) = split g in choice g1 fs $ g2 
 
 gens :: (RandomGen t) => t -> [t]
 gens g = let (g1, g2) = split g in g1:gens g2
