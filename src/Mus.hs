@@ -1,6 +1,8 @@
 module Mus where
 
 import Ask
+import Control.Concurrent
+import Data.List
 import FUtil
 import Haskore.Melody
 import Haskore.Melody.Standard as Melody
@@ -26,7 +28,8 @@ playQ m = do
     cmd = "timidity"
     opts = ["-B8,9"]
   fileFromGeneralMIDIMusic fileName m
-  runSL (cmd, opts ++ [fileName])
+  -- FIXME: trying out backgrounding via & to deal with timidity-vs-readline..
+  runSL $ (intercalate " " $ cmd:opts ++ [fileName]) ++ " &"
   return ()
 
 playP :: Melody.T -> IO ()
