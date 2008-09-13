@@ -1,45 +1,13 @@
 module Main where
 
--- want this to be general so that we can have many different tests
-
-import Data.Function
-import Data.List
-import Data.Maybe
-import System.Console.Readline
+import FUtil
+import Math
+import Mus
 import System.Environment
 import System.Random
 
-shuffle :: (RandomGen g) => g -> [b] -> [b]
-shuffle rnd l = map snd (sortBy (compare `on` fst) (zip rndInts l))
-  where
-    rndInts :: [Int]
-    rndInts = randoms rnd
-
-choice :: (RandomGen g) => g -> [a] -> a
-choice rnd l = head (shuffle rnd l)
-
-readMb :: (Read a) => String -> Maybe a
-readMb s = fmap fst . listToMaybe $ reads s
-
-mull :: (RandomGen g) => g -> IO ()
-mull g = do
-  let
-    n1:n2:_ = randomRs (11, 99 :: Int) g
-    ans = n1 * n2
-  putStrLn $ show n1 ++ " * " ++ show n2
-  l <- readline ""
-  let 
-    ansGivenMb = l >>= readMb
-    failz = putStrLn $ show (n1 * n2) ++ "\n!\n"
-  case ansGivenMb of
-    Nothing -> failz
-    Just ansGiven -> if ansGiven == ans then putStrLn "" else failz
-
-ask :: (RandomGen a) => [a -> b] -> a -> b
-ask fs g = let (g1, g2) = split g in choice g1 fs $ g2 
-
-gens :: (RandomGen t) => t -> [t]
-gens g = let (g1, g2) = split g in g1:gens g2
+askRand :: (RandomGen a) => [a -> b] -> a -> b
+askRand fs g = let (g1, g2) = split g in choice g1 fs $ g2 
 
 main :: IO ()
 main = do
@@ -49,4 +17,4 @@ main = do
       [] -> id
       [n] -> take $ read n
       _ -> error "usage"
-  sequence_ . askNF . map (ask [mull]) . gens =<< getStdGen
+  sequence_ . askNF . map (askRand [intvl]) . gens =<< getStdGen
