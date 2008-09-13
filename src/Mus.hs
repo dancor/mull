@@ -25,6 +25,7 @@ rndUntil t f g = let
   y = f g1
   in if t y then y else rndUntil t f g2
 
+playQ :: MVar () -> MidiMusic.T -> IO ()
 playQ playing m = do
   let
     cmd = "timidity"
@@ -38,9 +39,11 @@ playQ playing m = do
   removeFile fileName
   return ()
 
+playP :: MVar () -> Melody.T -> IO ()
 playP playing = playQ playing . fromStdMelody AcousticGrandPiano
 
-intvl playing = let
+intvl :: (RandomGen g) => MVar () -> ([Char], ([Char], g -> IO ()))
+intvl playing = (,) "intvl" . (,) "identify ascending intervals" $ let
   lowPitch = myPitch (3, C)
   hiPitch = myPitch (5, C)
   maxIntvl = 15
@@ -53,6 +56,8 @@ intvl playing = let
     hi = fst $ randomR (low + 1, low + maxIntvl) g2
     in [Pitch.fromInt low, Pitch.fromInt hi]
     )
-  disp = playP playing . line . map (\ x -> note x qn na)
+  disp m = do
+    putStrLn "(audio)"
+    playP playing . line $ map (\ x -> note x qn na) m
   ans [n1, n2] = show $ Pitch.toInt n2 - Pitch.toInt n1
   in ask gen disp ans
