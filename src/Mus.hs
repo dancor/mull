@@ -7,7 +7,6 @@ import FUtil
 import Haskore.Melody
 import Haskore.Melody.Standard as Melody
 import Haskore.Music.GeneralMIDI as MidiMusic
-import qualified Haskore.Music as Mus
 import Haskore.Interface.MIDI.Render
 import Haskore.Basic.Pitch as Pitch
 import HSH
