@@ -1,5 +1,6 @@
 module Main where
 
+import Control.Concurrent
 import FUtil
 import Math
 import Mus
@@ -12,9 +13,10 @@ askRand fs g = let (g1, g2) = split g in choice g1 fs $ g2
 main :: IO ()
 main = do
   args <- getArgs
+  playing <- newEmptyMVar
   let
     askNF = case args of
       [] -> id
       [n] -> take $ read n
       _ -> error "usage"
-  sequence_ . askNF . map (askRand [intvl]) . gens =<< getStdGen
+  sequence_ . askNF . map (askRand [intvl playing]) . gens =<< getStdGen

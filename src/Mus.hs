@@ -11,6 +11,8 @@ import qualified Haskore.Music as Mus
 import Haskore.Interface.MIDI.Render
 import Haskore.Basic.Pitch as Pitch
 import HSH
+import System.Directory
+import System.IO
 import System.Random
 
 -- haskore has its 0 octave at C3 (low C) for some reason
@@ -23,22 +25,22 @@ rndUntil t f g = let
   y = f g1
   in if t y then y else rndUntil t f g2
 
-playQ :: MidiMusic.T -> IO ()
-playQ m = do
+playQ playing m = do
   let
-    fileName = "test.mid"
     cmd = "timidity"
     opts = ["-B8,9"]
+  (fileName, h) <- openTempFile "." "test.mid"
+  hClose h
   fileFromGeneralMIDIMusic fileName m
-  -- FIXME: trying out backgrounding via & to deal with timidity-vs-readline..
-  runSL $ (intercalate " " $ cmd:opts ++ [fileName]) ++ " &"
+  putMVar playing ()
+  runSL (cmd, opts ++ [fileName])
+  takeMVar playing
+  removeFile fileName
   return ()
 
-playP :: Melody.T -> IO ()
-playP = playQ . fromStdMelody AcousticGrandPiano
+playP playing = playQ playing . fromStdMelody AcousticGrandPiano
 
-intvl :: StdGen -> IO ()
-intvl = let
+intvl playing = let
   lowPitch = myPitch (3, C)
   hiPitch = myPitch (5, C)
   maxIntvl = 15
@@ -51,6 +53,6 @@ intvl = let
     hi = fst $ randomR (low + 1, low + maxIntvl) g2
     in [Pitch.fromInt low, Pitch.fromInt hi]
     )
-  disp = playP . line . map (\ x -> note x qn na)
+  disp = playP playing . line . map (\ x -> note x qn na)
   ans [n1, n2] = show $ Pitch.toInt n2 - Pitch.toInt n1
   in ask gen disp ans
