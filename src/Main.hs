@@ -1,6 +1,8 @@
 module Main where
 
 import Control.Concurrent
+import Control.Monad
+import Control.Monad.Random
 import Data.Maybe
 import FUtil
 import Math
@@ -24,19 +26,26 @@ defaultOptions = Options {
   oNum = Nothing
 }
 
-askRand :: (RandomGen a) => [a -> b] -> a -> b
-askRand fs g = let (g1, g2) = split g in choice g1 fs $ g2 
+askRand :: (RandomGen g) => [Rand g a] -> Rand g a
+askRand fs = choice fs >>= id
+
+waitForStop :: [MVar ()] -> IO ()
+waitForStop = mapM_ (flip putMVar ())
 
 main :: IO ()
 main = do
   args <- getArgs
   playing <- newEmptyMVar
   let
+    subjects :: [(String, (String, Rand StdGen (IO ())))]
     subjects = [
       geet, 
       geetR, 
       intvl playing, 
-      mul
+      mul,
+      mul23,
+      elop24,
+      elop30
       ]
     usage = "usage: mull [options] <subjects>"
     subjMsg = unlines $
@@ -56,4 +65,5 @@ main = do
     askNF = case oNum opts of
       Nothing -> id
       Just n -> take n
-  sequence_ . askNF . map (askRand subj) . gens =<< getStdGen
+  sequence_ . askNF . repeat . (join . evalRandIO) $ askRand subj
+  waitForStop [playing]
