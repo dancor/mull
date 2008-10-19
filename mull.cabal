@@ -5,7 +5,8 @@ license-file:   LICENSE
 author:         dan corson <danl@alum.mit.edu>
 synopsis:       <syn>
 build-type:     Simple
-build-depends:  FUtil, Haskore, HSH, base, directory, random, readline, MonadRandom
+build-depends:  FUtil, HSH, Haskore, MonadRandom, base, directory, random,
+                readline
 
 executable:     mull
 ghc-options:    -threaded
