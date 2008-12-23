@@ -24,7 +24,7 @@ mulDigLen digLens = let
   in askUniqAns gen disp ansFor
 
 
-elop :: (RandomGen g) => [(String, Int -> Int -> Maybe Int)] -> Int -> Int -> 
+elop :: (RandomGen g) => [(String, Int -> Int -> Maybe Int)] -> Int -> Int ->
   Rand g (IO ())
 elop ops numNum sum = ask gen disp isRight ansFor where
   gen :: (RandomGen g) => Rand g [Int]
@@ -38,10 +38,10 @@ elop ops numNum sum = ask gen disp isRight ansFor where
     Nothing -> Nothing
   strify ([], [x]) = show x
   strify (f:fs, x:xs) = show x ++ " " ++ f ++ " (" ++ strify (fs, xs) ++ ")"
-  applyAndStr (fAndStrs, xs) = 
+  applyAndStr (fAndStrs, xs) =
     (strify (map fst fAndStrs, xs), apply (map snd fAndStrs, xs))
   anssFor q = map fst $ filter ((== Just sum) . snd) poss where
-    poss = [applyAndStr (f, xs) | f <- fOrds, xs <- perms q]
+    poss = [applyAndStr (f, xs) | f <- fOrds, xs <- permutations q]
     fOrds = sequence $ replicate (numNum - 1) ops
   ansFor = unlines . anssFor
 
@@ -53,9 +53,9 @@ ops = map (second justify) [("+", (+)), ("-", (-)), ("*", (*))] ++
   [("/", divInt)]
 
 elop24 :: (RandomGen g) => AskDesc g
-elop24 = (,) "elop24" . 
+elop24 = (,) "elop24" .
   (,) "find elementary operation combination to make 24" $ elop ops 4 24
 
 elop30 :: (RandomGen g) => AskDesc g
-elop30 = (,) "elop30" . 
+elop30 = (,) "elop30" .
   (,) "find elementary operation combination to make 30" $ elop ops 5 30
