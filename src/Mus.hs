@@ -41,7 +41,7 @@ intvl :: (RandomGen g) => MVar () -> AskDesc g
 intvl playing = (,) "intvl" . (,) "identify ascending intervals" $ let
   lowPitch = myPitch (3, C)
   hiPitch = myPitch (5, C)
-  maxIntvl = 15
+  maxIntvl = 16
 
   gen = rndUntil ((<= hiPitch) . (!! 1)) $ do
     low <- getRandomR (Pitch.toInt lowPitch, Pitch.toInt hiPitch - 1)
@@ -80,7 +80,7 @@ geet = (,) "geet" . (,) "guitar frets -> note names" $ let
 geetR :: (RandomGen g) => AskDesc g
 geetR = (,) "geetR" . (,) "note names -> guitar frets" $ let
   gen = liftM2 (,) (choice strs) $ getRandomR (1, 11)
-  disp (s, f) = putStrLn $ head (showPitch s) ++ "'s " ++ 
+  disp (s, f) = putStrLn $ head (showPitch s) ++ "'s " ++
     head (showPitch . Pitch.fromInt $ Pitch.toInt s + f)
   ansFor (s, f) = show f
   in askUniqAns gen disp ansFor
