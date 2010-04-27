@@ -13,7 +13,7 @@ import System.Directory
 import System.IO
 import System.Random
 
---data ArpegForm = Ascend | Descend | Chord | Arb
+data ArpegForm = Ascend | Descend | Chord | Arb
 
 data Note = C | Cs | D | Ds | E | F | Fs | G | Gs | A | As | B
   deriving (Enum, Eq, Ord)
@@ -21,20 +21,21 @@ data Note = C | Cs | D | Ds | E | F | Fs | G | Gs | A | As | B
 type Pitch = (Int, Note)
 
 playMus :: [Pitch] -> IO ()
-playMus = mapM_ playPitch
-
--- hacky v1!
-playPitch :: Pitch -> IO ()
-playPitch p = withProgNameAndArgs runALUT $ \_progName _args -> do
-  toneBuffer <- createBuffer $ Sine freq 0 1
-  [toneSrc] <- genObjectNames 1
-  buffer toneSrc $= Just toneBuffer
-  play [toneSrc]
-  sleep 0.5
-  deleteObjectNames [toneSrc]
-  deleteObjectNames [toneBuffer]
+playMus ps = withProgNameAndArgs runALUT $ \_progName _args -> do
+  let
+    dur = 0.6
+    playBuffer toneBuffer toneSrc = do
+      buffer toneSrc $= Just toneBuffer
+      play [toneSrc]
+      sleep dur
+  toneBuffers <- mapM (\ p -> createBuffer $ Sine (pToFreq p) 0 dur) ps
+  toneSrcs <- genObjectNames $ length ps
+  zipWithM_ playBuffer toneBuffers toneSrcs
+  deleteObjectNames toneSrcs
+  deleteObjectNames toneBuffers
   where
-  freq = 440 * 2 ** ((fromIntegral $ pitchToInt p - pitchToInt (4, A)) / 12)
+  pToFreq p =
+    440 * 2 ** ((fromIntegral $ pitchToInt p - pitchToInt (4, A)) / 12)
 
 pitchFromInt :: Int -> Pitch
 pitchFromInt = second toEnum . (`divMod` 12)
@@ -53,7 +54,11 @@ arpeg = Ask "arpeg" "identify intervals/arpeggios" $
   gen = rndUntil ((<= hiPitch) . (!! 1)) $ do
     low <- getRandomR (pitchToInt lowPitch, pitchToInt hiPitch - 1)
     hi <- getRandomR (low + 1, low + maxIntvl)
-    return [pitchFromInt low, pitchFromInt hi]
+    kind <- choice [Ascend, Descend]
+    let r = [pitchFromInt low, pitchFromInt hi]
+    return $ case kind of
+      Ascend -> r
+      Descend -> reverse r
     {-
     when (noteNum > pitchToInt hiPitch - pitchToInt lowPitch) $
       error "too many notes for note range"
