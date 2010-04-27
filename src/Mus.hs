@@ -1,86 +1,102 @@
 module Mus where
 
 import Ask
+import Control.Arrow
 import Control.Concurrent
 import Control.Monad
 import Control.Monad.Random
+import Control.Monad.Trans
 import Data.List
 import FUtil
-import Haskore.Melody
-import Haskore.Melody.Standard as Melody
-import Haskore.Music.GeneralMIDI as MidiMusic
-import Haskore.Interface.MIDI.Render
-import Haskore.Basic.Pitch as Pitch
-import HSH
+import Sound.ALUT
 import System.Directory
 import System.IO
 import System.Random
 
--- haskore has its 0 octave at C3 (low C) for some reason
-myPitch :: (Num t) => (t, t1) -> (t, t1)
-myPitch (o, n) = (o - 3, n)
+--data ArpegForm = Ascend | Descend | Chord | Arb
 
-playQ :: MVar () -> MidiMusic.T -> IO ()
-playQ playing m = do
-  let
-    cmd = "timidity"
-    opts = ["-B8,9"]
-  (fileName, h) <- openTempFile "." "test.mid"
-  hClose h
-  fileFromGeneralMIDIMusic fileName m
-  putMVar playing ()
-  runSL (cmd, opts ++ [fileName])
-  takeMVar playing
-  removeFile fileName
-  return ()
+data Note = C | Cs | D | Ds | E | F | Fs | G | Gs | A | As | B
+  deriving (Enum, Eq, Ord)
 
-playP :: MVar () -> Melody.T -> IO ()
-playP playing = playQ playing . fromStdMelody AcousticGrandPiano
+type Pitch = (Int, Note)
 
-intvl :: (RandomGen g) => MVar () -> AskDesc g
-intvl playing = (,) "intvl" . (,) "identify ascending intervals" $ let
-  lowPitch = myPitch (3, C)
-  hiPitch = myPitch (5, C)
+playMus :: [Pitch] -> IO ()
+playMus = mapM_ playPitch
+
+-- hacky v1!
+playPitch :: Pitch -> IO ()
+playPitch p = withProgNameAndArgs runALUT $ \_progName _args -> do
+  helloBuffer <- createBuffer $ Sine freq 0 1
+  [helloSource] <- genObjectNames 1
+  buffer helloSource $= Just helloBuffer
+  play [helloSource]
+  sleep 0.5
+  where
+  freq = 440 * 2 ** ((fromIntegral $ pitchToInt p - pitchToInt (4, A)) / 12)
+
+pitchFromInt :: Int -> Pitch
+pitchFromInt = second toEnum . (`divMod` 12)
+
+pitchToInt :: Pitch -> Int
+pitchToInt (o, n) = 12 * o + fromEnum n
+
+arpeg :: (RandomGen g) => AskDesc g
+arpeg = Ask "arpeg" "identify intervals/arpeggios" $
+  askUniqAns gen disp ansFor
+  where
+  lowPitch = (3, C)
+  hiPitch = (5, C)
   maxIntvl = 16
 
   gen = rndUntil ((<= hiPitch) . (!! 1)) $ do
-    low <- getRandomR (Pitch.toInt lowPitch, Pitch.toInt hiPitch - 1)
+    low <- getRandomR (pitchToInt lowPitch, pitchToInt hiPitch - 1)
     hi <- getRandomR (low + 1, low + maxIntvl)
-    return [Pitch.fromInt low, Pitch.fromInt hi]
-  disp m = do
+    return [pitchFromInt low, pitchFromInt hi]
+    {-
+    when (noteNum > pitchToInt hiPitch - pitchToInt lowPitch) $
+      error "too many notes for note range"
+    -- todo
+    let
+      noteOrdFunc = case Ascend of
+    -}
+    --notes <- map pitchFromInt . take noteNum . nub <$> getRandomRs
+
+  disp ns = do
     putStrLn "(audio)"
-    playP playing . line $ map (\ x -> note x qn na) m
-  ansFor [n1, n2] = show $ Pitch.toInt n2 - Pitch.toInt n1
-  in askUniqAns gen disp ansFor
+    playMus ns
+  ansFor [n1, n2] = show $ pitchToInt n2 - pitchToInt n1
 
-strs = map myPitch [(2, E), (2, A), (3, D), (3, G), (3, B), (4, E)]
+geetStrs :: [Pitch]
+geetStrs = [(2, E), (2, A), (3, D), (3, G), (3, B), (4, E)]
 
-showNote Pitch.C = ["C"]
-showNote Pitch.Cs = ["Cs", "Db"]
-showNote Pitch.D = ["D"]
-showNote Pitch.Ds = ["Ds", "Eb"]
-showNote Pitch.E = ["E"]
-showNote Pitch.F = ["F"]
-showNote Pitch.Fs = ["Fs", "Gb"]
-showNote Pitch.G = ["G"]
-showNote Pitch.Gs = ["Gs", "Ab"]
-showNote Pitch.A = ["A"]
-showNote Pitch.As = ["As", "Bb"]
-showNote Pitch.B = ["B"]
+showNote :: Note -> [String]
+showNote C = ["C"]
+showNote Cs = ["Cs", "Db"]
+showNote D = ["D"]
+showNote Ds = ["Ds", "Eb"]
+showNote E = ["E"]
+showNote F = ["F"]
+showNote Fs = ["Fs", "Gb"]
+showNote G = ["G"]
+showNote Gs = ["Gs", "Ab"]
+showNote A = ["A"]
+showNote As = ["As", "Bb"]
+showNote B = ["B"]
 
-showPitch (o, n) = map (++ show (o + 3)) $ showNote n
+showPitch :: Pitch -> [String]
+showPitch (o, n) = map (++ show o) $ showNote n
 
 geet :: (RandomGen g) => AskDesc g
-geet = (,) "geet" . (,) "guitar frets -> note names" $ let
-  gen = liftM2 (,) (choice strs) $ getRandomR (1, 11)
+geet = Ask "geet" "guitar frets -> note names" $ askAnsPoss gen disp ansPoss
+  where
+  gen = liftM2 (,) (choice geetStrs) $ getRandomR (1, 11)
   disp (s, f) = putStrLn $ head (showPitch s) ++ " + " ++ show f
-  ansPoss (s, f) = showPitch . Pitch.fromInt $ Pitch.toInt s + f
-  in askAnsPoss gen disp ansPoss
+  ansPoss (s, f) = showPitch . pitchFromInt $ pitchToInt s + f
 
 geetR :: (RandomGen g) => AskDesc g
-geetR = (,) "geetR" . (,) "note names -> guitar frets" $ let
-  gen = liftM2 (,) (choice strs) $ getRandomR (1, 11)
+geetR = Ask "geetR" "note names -> guitar frets" $ askUniqAns gen disp ansFor
+  where
+  gen = liftM2 (,) (choice geetStrs) $ getRandomR (1, 11)
   disp (s, f) = putStrLn $ head (showPitch s) ++ "'s " ++
-    head (showPitch . Pitch.fromInt $ Pitch.toInt s + f)
+    head (showPitch . pitchFromInt $ pitchToInt s + f)
   ansFor (s, f) = show f
-  in askUniqAns gen disp ansFor

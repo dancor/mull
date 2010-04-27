@@ -8,26 +8,22 @@ import FUtil
 import System.Random
 
 mul :: (RandomGen g) => AskDesc g
-mul = (,) "mul" . (,) "multiply 2-digit numbers" $ mulDigLen [2, 2]
+mul = Ask "mul" "multiply 2-digit numbers" $ mulDigLen [2, 2]
 
 mul23 :: (RandomGen g) => AskDesc g
-mul23 = (,) "mul23" . (,) "multiply 2 and 3-digit numbers" $ mulDigLen [2, 3]
+mul23 = Ask "mul23" "multiply 2 and 3-digit numbers" $ mulDigLen [2, 3]
 
 nOf n i = foldr (\ x a -> x + 10 * a) 0 $ replicate n i
 
-mulDigLen :: (RandomGen g) => [Int] -> Rand g (IO ())
-mulDigLen digLens = let
-  gen :: (RandomGen g) => Rand g [Int]
-  gen = sequence $ map (\ n -> getRandomR (nOf n 1, nOf n 9)) digLens
+mulDigLen :: (RandomGen g) => [Int] -> RandT g IO ()
+mulDigLen digLens = askUniqAns gen disp ansFor where
+  gen = sequence $ map (\ n -> getRandomR (nOf n (1 :: Int), nOf n 9)) digLens
   disp = putStrLn . intercalate " * " . map show
   ansFor = show . product
-  in askUniqAns gen disp ansFor
-
 
 elop :: (RandomGen g) => [(String, Int -> Int -> Maybe Int)] -> Int -> Int ->
-  Rand g (IO ())
+  RandT g IO ()
 elop ops numNum sum = ask gen disp isRight ansFor where
-  gen :: (RandomGen g) => Rand g [Int]
   gen = rndUntil (not . null . anssFor) $
     sequence . replicate numNum $ getRandomR (1, 9)
   disp = putStrLn . intercalate " " . map show
@@ -53,9 +49,9 @@ ops = map (second justify) [("+", (+)), ("-", (-)), ("*", (*))] ++
   [("/", divInt)]
 
 elop24 :: (RandomGen g) => AskDesc g
-elop24 = (,) "elop24" .
-  (,) "find elementary operation combination to make 24" $ elop ops 4 24
+elop24 = Ask "elop24" "find elementary operation combination to make 24" $
+  elop ops 4 24
 
 elop30 :: (RandomGen g) => AskDesc g
-elop30 = (,) "elop30" .
-  (,) "find elementary operation combination to make 30" $ elop ops 5 30
+elop30 = Ask "elop30" "find elementary operation combination to make 30" $
+  elop ops 5 30
