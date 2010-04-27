@@ -26,11 +26,13 @@ playMus = mapM_ playPitch
 -- hacky v1!
 playPitch :: Pitch -> IO ()
 playPitch p = withProgNameAndArgs runALUT $ \_progName _args -> do
-  helloBuffer <- createBuffer $ Sine freq 0 1
-  [helloSource] <- genObjectNames 1
-  buffer helloSource $= Just helloBuffer
-  play [helloSource]
+  toneBuffer <- createBuffer $ Sine freq 0 1
+  [toneSrc] <- genObjectNames 1
+  buffer toneSrc $= Just toneBuffer
+  play [toneSrc]
   sleep 0.5
+  deleteObjectNames [toneSrc]
+  deleteObjectNames [toneBuffer]
   where
   freq = 440 * 2 ** ((fromIntegral $ pitchToInt p - pitchToInt (4, A)) / 12)
 
