@@ -33,6 +33,7 @@ elop ops numNum sum = ask gen disp isRight ansFor where
     Just res -> x `f` res
     Nothing -> Nothing
   strify ([], [x]) = show x
+  strify ([f], x:x2:[]) = show x ++ " " ++ f ++ " " ++ show x2
   strify (f:fs, x:xs) = show x ++ " " ++ f ++ " (" ++ strify (fs, xs) ++ ")"
   applyAndStr (fAndStrs, xs) =
     (strify (map fst fAndStrs, xs), apply (map snd fAndStrs, xs))
