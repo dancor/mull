@@ -3,10 +3,20 @@ module Ask where
 import Control.Concurrent
 import Control.Monad.Trans
 import Control.Monad.Random
+import Data.Function
+import Data.List
 import Data.Maybe
 import System.Console.Readline
 
 data AskDesc g = Ask String String (RandT g IO ())
+
+randShuffle :: (MonadRandom m) => [b] -> m [b]
+randShuffle l = do
+  rndInts <- getRandoms
+  return . map snd . sortBy (compare `on` fst) $ zip (rndInts :: [Int]) l
+
+randChoice :: (MonadRandom m) => [b] -> m b
+randChoice l = randShuffle l >>= return . head
 
 rndUntil :: (MonadRandom r) => (a -> Bool) -> r a -> r a
 rndUntil t f = do
@@ -21,7 +31,7 @@ ask :: (RandomGen g) => RandT g IO a -> (a -> IO ()) ->
 ask gen dispM isRight ansFor = gen >>= liftIO . reAsk where
   reAsk qInstance = do
     -- fork in case disp takes a bit so that readline stays happy..
-    forkIO $ dispM qInstance
+    _ <- forkIO $ dispM qInstance
     l <- fmap (fromMaybe "") $ readline ""
     if isRight qInstance l then putStrLn "" else case l of
       "" -> reAsk qInstance

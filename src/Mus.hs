@@ -1,13 +1,14 @@
 module Mus where
 
 import Ask
+
 import Control.Arrow
 import Control.Concurrent
 import Control.Monad
 import Control.Monad.Random
 import Control.Monad.Trans
+import Data.Function
 import Data.List
-import FUtil
 import Sound.ALUT
 import System.Directory
 import System.IO
@@ -54,7 +55,7 @@ arpeg = Ask "arpeg" "identify intervals/arpeggios" $
   gen = rndUntil ((<= hiPitch) . (!! 1)) $ do
     low <- getRandomR (pitchToInt lowPitch, pitchToInt hiPitch - 1)
     hi <- getRandomR (low + 1, low + maxIntvl)
-    kind <- choice [Ascend, Descend]
+    kind <- randChoice [Ascend, Descend]
     let r = [pitchFromInt low, pitchFromInt hi]
     return $ case kind of
       Ascend -> r
@@ -96,14 +97,14 @@ showPitch (o, n) = map (++ show o) $ showNote n
 geet :: (RandomGen g) => AskDesc g
 geet = Ask "geet" "guitar frets -> note names" $ askAnsPoss gen disp ansPoss
   where
-  gen = liftM2 (,) (choice geetStrs) $ getRandomR (1, 11)
+  gen = liftM2 (,) (randChoice geetStrs) $ getRandomR (1, 11)
   disp (s, f) = putStrLn $ head (showPitch s) ++ " + " ++ show f
   ansPoss (s, f) = showPitch . pitchFromInt $ pitchToInt s + f
 
 geetR :: (RandomGen g) => AskDesc g
 geetR = Ask "geetR" "note names -> guitar frets" $ askUniqAns gen disp ansFor
   where
-  gen = liftM2 (,) (choice geetStrs) $ getRandomR (1, 11)
+  gen = liftM2 (,) (randChoice geetStrs) $ getRandomR (1, 11)
   disp (s, f) = putStrLn $ head (showPitch s) ++ "'s " ++
     head (showPitch . pitchFromInt $ pitchToInt s + f)
   ansFor (s, f) = show f

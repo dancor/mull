@@ -4,10 +4,6 @@ import Control.Monad
 import Control.Monad.Random
 import Data.Either
 import Data.Maybe
-import FUtil
-import System.Console.GetOpt
-import System.Environment
-import System.Random
 
 import Ask
 import Math
@@ -32,8 +28,9 @@ main = do
       mul23,
       elop24,
       elop30]
-    usage = "usage: mull [options] <subjects>\n" ++ Opt.optInfo ++ "\n" ++
-      unlines ("subjects are:":map (\ (Ask s d _) -> s ++ "\t" ++ d) subjects)
+    usage = "usage: mull [options] <subjects>\n" ++ Opt.optInfo ++ "\n\n" ++
+      unlines
+      ("The subjects are:":map (\ (Ask s d _) -> s ++ "\t" ++ d) subjects)
   (opts, args) <- Opt.getOpts "" usage
   let
     doErr e = error $ e ++ usage
@@ -48,5 +45,5 @@ main = do
           map (\ s -> maybe (Left s) Right . listToMaybe $
             filter (\ (Ask s' _ _) -> s' == s) subjects) ss
     askNFunc = maybe id take $ Opt.askNum opts
-  sequence_ . askNFunc . repeat . evalRandTIO . join . choice $
+  sequence_ . askNFunc . repeat . evalRandTIO . join . randChoice $
     map (\ (Ask _ _ r) -> r) subjs
