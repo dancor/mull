@@ -1,12 +1,56 @@
 module Ask where
 
 import Control.Concurrent
+import Control.Monad
 import Control.Monad.Trans
 import Control.Monad.Random
 import Data.Function
 import Data.List
 import Data.Maybe
+import System.Console.ANSI
 import System.Console.Readline
+
+data Qa = Qa
+    { qaQ :: [String]
+    , qaA :: [String]
+    }
+
+data HowToAsk = HowToAsk
+    { reqRightNTimes :: Int
+    }
+
+askQas :: HowToAsk -> [Qa] -> IO ()
+askQas how = mapM_ (askQa how)
+
+askQa :: HowToAsk -> Qa -> IO ()
+askQa (HowToAsk needsNRight) qa = do
+  gotRight <- askQaOnce qa
+  let needsNRight' = if gotRight then needsNRight - 1 else needsNRight
+  unless (needsNRight' <= 0) $ askQa (HowToAsk needsNRight') qa
+
+getLines :: IO [String]
+getLines = do
+    l <- fmap (fromMaybe "") $ readline ""
+    if null l then return [] else fmap (l :) getLines
+
+askQaOnce :: Qa -> IO Bool
+askQaOnce (Qa q a) = do
+    clearScreen
+    setCursorPosition 0 0
+    putStrLn $ unlines q
+    aGiven <- getLines
+    if a == aGiven
+      then do
+        putStrLn "Correct! Press enter to continue."
+        _ <- getLine
+        return True
+      else do
+        putStrLn "No, the answer was: "
+        putStrLn ""
+        putStrLn $ unlines a
+        putStrLn "Press enter to continue."
+        _ <- getLine
+        return False
 
 data AskDesc g = Ask String String (RandT g IO ())
 

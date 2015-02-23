@@ -1,4 +1,4 @@
-module Mus where
+module Subject.Music where
 
 import Ask
 

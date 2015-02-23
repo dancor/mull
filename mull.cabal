@@ -7,8 +7,10 @@ synopsis:       <syn>
 build-type:     Simple
 build-depends:
     ALUT
+  , ansi-terminal
   , base
   , directory
+  , filepath
   , MonadRandom
   , mtl
   , polyopt

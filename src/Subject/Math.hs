@@ -1,4 +1,4 @@
-module Math where
+module Subject.Math where
 
 import Ask
 import Control.Arrow
