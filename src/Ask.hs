@@ -23,10 +23,12 @@ askQas :: HowToAsk -> [Qa] -> IO ()
 askQas how = mapM_ (askQa how)
 
 askQa :: HowToAsk -> Qa -> IO ()
-askQa (HowToAsk needsNRight) qa = do
-  gotRight <- askQaOnce qa
-  let needsNRight' = if gotRight then needsNRight - 1 else needsNRight
-  unless (needsNRight' <= 0) $ askQa (HowToAsk needsNRight') qa
+askQa (HowToAsk needsNRight) qa = loop needsNRight
+  where
+    loop n = do
+      gotRight <- askQaOnce qa
+      let n' = if gotRight then n - 1 else needsNRight
+      unless (n' <= 0) $ loop n'
 
 getLines :: IO [String]
 getLines = do
